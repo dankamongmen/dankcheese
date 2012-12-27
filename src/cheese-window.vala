@@ -1446,7 +1446,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     Gtk.StyleContext context;
     context = thumb_view.get_style_context ();
     screen = Gdk.Screen.get_default();
-    context.add_provider_for_screen (screen, css, STYLE_PROVIDER_PRIORITY_USER);
+    Gtk.StyleContext.add_provider_for_screen (screen, css, STYLE_PROVIDER_PRIORITY_USER);
 
     thumb_view.button_press_event.connect (on_thumbnail_mouse_button_press);
 
