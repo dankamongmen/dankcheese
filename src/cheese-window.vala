@@ -1265,7 +1265,8 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     }
     else
     {
-      action_sensitivities = new HashMap<string, bool> (GLib.str_hash);
+      action_sensitivities = new HashMap<string, bool>
+        (Gee.Functions.get_hash_func_for(typeof(string)));
       GLib.SList<weak GLib.Object> objects = gtk_builder.get_objects ();
       foreach (GLib.Object obj in objects)
       {
