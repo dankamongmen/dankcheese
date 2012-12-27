@@ -30,7 +30,7 @@ internal class Cheese.EffectsManager : GLib.Object
 
   public EffectsManager ()
   {
-    effects = new ArrayList<Effect>((EqualFunc) cmp_value);
+    effects = new ArrayList<Effect>(Gee.Functions.get_equal_func_for(typeof(Effect)));
   }
 
   /**
@@ -42,7 +42,7 @@ internal class Cheese.EffectsManager : GLib.Object
     for (int i = 0; i < effect_list.length (); i++)
       effects.add (effect_list<Cheese.Effect>.nth (i).data);
 
-    effects.sort ((CompareFunc) sort_value);
+    effects.sort (Gee.Functions.get_compare_func_for(typeof(Cheese.Effect)));
 
     /* add identity effect as the first in the effect list */
     if (effects.size > 0)
