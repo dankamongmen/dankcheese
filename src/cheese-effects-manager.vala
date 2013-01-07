@@ -20,17 +20,16 @@
  */
 
 using GLib;
-using Gee;
 
 const string GROUP_NAME = "Effect";
 
 internal class Cheese.EffectsManager : GLib.Object
 {
-  public ArrayList<Effect> effects;
+  public GLib.Array<Effect> effects;
 
   public EffectsManager ()
   {
-    effects = new ArrayList<Effect>(Gee.Functions.get_equal_func_for(typeof(Effect)));
+    effects = new Array<Effect>();
   }
 
   /**
@@ -40,15 +39,15 @@ internal class Cheese.EffectsManager : GLib.Object
   {
     GLib.List<Cheese.Effect> effect_list = Cheese.Effect.load_effects ();
     for (int i = 0; i < effect_list.length (); i++)
-      effects.add (effect_list<Cheese.Effect>.nth (i).data);
+      effects.append_val (effect_list<Cheese.Effect>.nth (i).data);
 
-    effects.sort (Gee.Functions.get_compare_func_for(typeof(Cheese.Effect)));
+    effects.sort ((GLib.CompareFunc)sort_value);
 
     /* add identity effect as the first in the effect list */
-    if (effects.size > 0)
+    if (effects.length > 0)
     {
       Effect e = new Effect (_("No Effect"), "identity");
-      effects.insert (0, e);
+      effects.prepend_val (e);
     }
   }
 
@@ -60,24 +59,12 @@ internal class Cheese.EffectsManager : GLib.Object
    */
   public Effect ? get_effect (string name)
   {
-    foreach (Effect eff in effects)
-    {
-      if (eff.name == name)
-        return eff;
+    for(int i = 0 ; i < effects.length ; ++i){
+      if((string)effects.index(i) == name){
+        return effects.index(i);
+      }
     }
     return null;
-  }
-
-  /**
-   * Compare two effects by the pipeline description.
-   *
-   * @param a an effect to compare against
-   * @param b another effect to compare against
-   * @return true if the effects are the same, false otherwise
-   */
-  private static bool cmp_value (Effect a, Effect b)
-  {
-    return a.pipeline_desc == b.pipeline_desc;
   }
 
   /**

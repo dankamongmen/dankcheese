@@ -26,7 +26,6 @@ using Clutter;
 using Config;
 using Eog;
 using Gst;
-using Gee;
 using CanberraGtk;
 
 [DBus(name = "org.freedesktop.PackageKit.Modify")]
@@ -77,7 +76,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
 
   private Clutter.Box           current_effects_grid;
   private int                current_effects_page = 0;
-  private ArrayList<Clutter.Box> effects_grids;
+  private GLib.Array<Clutter.Box> effects_grids;
 
   private Gtk.ToggleAction wide_mode_action;
   private Gtk.Action       countdown_action;
@@ -1076,7 +1075,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
   [CCode (instance_pos = -1)]
   public void on_next_effects_page (Gtk.Action action)
   {
-    if (current_effects_page != (effects_manager.effects.size / EFFECTS_PER_PAGE))
+    if (current_effects_page != (effects_manager.effects.length / EFFECTS_PER_PAGE))
     {
       activate_effects_page (current_effects_page + 1);
     }
@@ -1096,15 +1095,15 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     {
       viewport_layout.remove ((Clutter.Actor) current_effects_grid);
     }
-    current_effects_grid = effects_grids[number];
+    current_effects_grid = effects_grids.index(number);
     current_effects_grid.set ("opacity", 0);
     viewport_layout.add ((Clutter.Actor) current_effects_grid);
     current_effects_grid.animate (Clutter.AnimationMode.LINEAR, 1000, "opacity", 255);
 
-    for (int i = 0; i < effects_manager.effects.size; i++)
+    for (int i = 0; i < effects_manager.effects.length; i++)
     {
       int           page_of_effect = i / EFFECTS_PER_PAGE;
-      Cheese.Effect effect         = effects_manager.effects[i];
+      Cheese.Effect effect         = effects_manager.effects.index(i);
       if (page_of_effect == number)
       {
         if (!effect.is_preview_connected ())
@@ -1130,7 +1129,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
   {
     effects_page_prev_action.sensitive = (is_effects_selector_active && current_effects_page != 0);
     effects_page_next_action.sensitive =
-      (is_effects_selector_active && current_effects_page != effects_manager.effects.size / EFFECTS_PER_PAGE);
+      (is_effects_selector_active && current_effects_page != effects_manager.effects.length / EFFECTS_PER_PAGE);
   }
 
   /**
@@ -1145,7 +1144,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     {
       video_preview.hide ();
 
-      if (effects_grids.size == 0)
+      if (effects_grids.length == 0)
       {
         error_layer.text = _("No effects found");
         error_layer.show ();
@@ -1158,7 +1157,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     }
     else
     {
-      if (effects_grids.size == 0)
+      if (effects_grids.length == 0)
       {
         error_layer.hide ();
       }
@@ -1184,26 +1183,26 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
       effects_manager.load_effects ();
 
       /* Must initialize effects_grids before returning, as it is dereferenced later, bug 654671. */
-      effects_grids = new ArrayList<Clutter.Box> ();
+      effects_grids = new GLib.Array<Clutter.Box> ();
 
-      if (effects_manager.effects.size == 0)
+      if (effects_manager.effects.length == 0)
       {
         warning ("gnome-video-effects is not installed.");
         return;
       }
 
-      for (int i = 0; i <= effects_manager.effects.size / EFFECTS_PER_PAGE; i++)
+      for (int i = 0; i <= effects_manager.effects.length / EFFECTS_PER_PAGE; i++)
       {
         Clutter.TableLayout table_layout = new TableLayout ();
         Clutter.Box grid = new Clutter.Box (table_layout);
-        effects_grids.add (grid);
+        effects_grids.append_val (grid);
         table_layout.set_column_spacing (10);
         table_layout.set_row_spacing (10);
       }
 
-      for (int i = 0; i < effects_manager.effects.size; i++)
+      for (int i = 0; i < effects_manager.effects.length; i++)
       {
-        Effect            effect  = effects_manager.effects[i];
+        Effect            effect  = effects_manager.effects.index(i);
         Clutter.Texture   texture = new Clutter.Texture ();
         Clutter.BinLayout layout  = new Clutter.BinLayout (Clutter.BinAlignment.CENTER,
                                                            Clutter.BinAlignment.CENTER);
@@ -1234,7 +1233,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
                   "x-align", Clutter.BinAlignment.CENTER,
                   "y-align", Clutter.BinAlignment.END, null);
 
-        Clutter.TableLayout table_layout = (Clutter.TableLayout) effects_grids[i / EFFECTS_PER_PAGE].layout_manager;
+        Clutter.TableLayout table_layout = (Clutter.TableLayout) effects_grids.index(i / EFFECTS_PER_PAGE).layout_manager;
         table_layout.pack ((Clutter.Actor) box,
                            (i % EFFECTS_PER_PAGE) % 3,
                            (i % EFFECTS_PER_PAGE) / 3);
@@ -1242,11 +1241,11 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
       }
 
       setup_effects_page_switch_sensitivity ();
-      current_effects_grid = effects_grids[0];
+      current_effects_grid = effects_grids.index(0);
     }
   }
 
-  private Gee.HashMap<string, bool> action_sensitivities;
+  private HashTable<string, bool> action_sensitivities;
   /**
    * Toggle the sensitvity of the camera actions.
    *
@@ -1257,7 +1256,8 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     is_camera_actions_sensitive = active;
     if (active)
     {
-      foreach (string key in action_sensitivities.keys)
+	/*List<string> keys = new List<string>(action_sensitivities.get_keys());*/
+      foreach (string key in action_sensitivities.get_keys())
       {
         Gtk.Action action = gtk_builder.get_object (key) as Gtk.Action;
         action.sensitive = action_sensitivities.get (key);
@@ -1265,8 +1265,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     }
     else
     {
-      action_sensitivities = new HashMap<string, bool>
-        (Gee.Functions.get_hash_func_for(typeof(string)));
+      action_sensitivities = new GLib.HashTable<string, bool>(str_hash, str_equal);
       GLib.SList<weak GLib.Object> objects = gtk_builder.get_objects ();
       foreach (GLib.Object obj in objects)
       {
